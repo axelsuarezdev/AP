@@ -1,4 +1,5 @@
 import {Model, DataTypes} from "sequelize";
+import { sequelize } from "../sync";
 
 // USERS & RELATED
 class User extends Model{}
