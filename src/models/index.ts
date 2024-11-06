@@ -39,7 +39,7 @@ Auth.init({
 User.init({
     id: defaultIdField(),
     name: defaultStringField(),
-    lastname: defaultStringField(),
+    username: defaultStringField(), /* !!! ASEGURARSE EN EL ENDPOINT DE QUE SEA UN STRING SIN ESPACIOS*/
     profile_type: DataTypes.ENUM("artist", "client"),
     description: DataTypes.STRING,
     profile_picture: DataTypes.STRING,
