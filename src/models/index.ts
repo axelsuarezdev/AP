@@ -40,6 +40,12 @@ User.init({
     id: defaultIdField(),
     name: defaultStringField(),
     lastname: defaultStringField(),
+    profile_type: DataTypes.ENUM("artist", "client"),
+    description: DataTypes.STRING,
+    profile_picture: DataTypes.STRING,
+    created_at: {type: "TIMESTAMP"},
+    updated_at: {type: "TIMESTAMP"},
+
 },{
     sequelize, 
     modelName: "User"
@@ -64,7 +70,9 @@ Comission.init({
     requested_at: {type: "TIMESTAMP"},
     delivery_date: {type: "TIMESTAMP"},
     reference_image: DataTypes.STRING,
-}, {sequelize, modelName: ("Comission")})
+}, {
+    sequelize, modelName: ("Comission")
+})
 
 Payments.init({
     id: defaultIdField(),
