@@ -12,9 +12,9 @@ const defaultStringField = ()=>({
 })
 // Constante para ahorrar las propiedades de "id"
 const defaultIdField = ()=>({
-    type: DataTypes.INTEGER,
+    type: DataTypes.UUID,
+    defaultValue: DataTypes.UUID,
     primaryKey: true,
-    autoIncrement: true,
     allowNull: false
 })
 
@@ -40,7 +40,14 @@ User.init({
     id: defaultIdField(),
     name: defaultStringField(),
     username: defaultStringField(), /* !!! ASEGURARSE EN EL ENDPOINT DE QUE SEA UN STRING SIN ESPACIOS*/
-    profile_type: DataTypes.ENUM("artist", "client"),
+    profile_type: {
+       type: DataTypes.STRING,
+       defaultValue: "client",
+        allowNull: false,
+        validate: {
+            isIn: [['artist', 'client']],
+        },
+    },
     description: DataTypes.STRING,
     profile_picture: DataTypes.STRING,
     created_at: {type: "TIMESTAMP"},
@@ -48,14 +55,15 @@ User.init({
 
 },{
     sequelize, 
-    modelName: "User"
+    modelName: "User",
+    freezeTableName: true,
 })
 
-// COMISSIONS & RELATED
-class Comission extends Model{}
-class Payments extends Model{}
+// COmMISSIONS & RELATED
+class Commission extends Model{}
+class Payment extends Model{}
 
-Comission.init({
+Commission.init({
     id: defaultIdField(),
     artist_id: DataTypes.STRING,
     client_id: DataTypes.STRING,
@@ -63,24 +71,56 @@ Comission.init({
     description: DataTypes.STRING,
     price: DataTypes.DECIMAL,
     currency: DataTypes.STRING, // Moneda
-    status: DataTypes.ENUM('pending', 'in_progress', 'completed','cancelled'),
-    priority_level: DataTypes.ENUM('normal', 'high'),
+    status: {
+        type: DataTypes.STRING, // Cambia ENUM por STRING
+        allowNull: false,
+        validate: {
+            isIn: [['pending', 'in_progress', 'completed', 'cancelled']], // Restricciones para simular ENUM
+        },
+    },
+    priority_level: {
+        type: DataTypes.STRING,
+        validate: {
+            isIn: [['normal', 'high']]
+        }
+    },
     preset: DataTypes.BOOLEAN,
     tags: DataTypes.ARRAY(DataTypes.STRING),
     requested_at: {type: "TIMESTAMP"},
     delivery_date: {type: "TIMESTAMP"},
     reference_image: DataTypes.STRING,
 }, {
-    sequelize, modelName: ("Comission")
+    sequelize, modelName: ("Commission")
 })
 
-Payments.init({
+Payment.init({
     id: defaultIdField(),
-    comission_id: {
+    commission_id: {
         type: DataTypes.INTEGER,
     },
     amount: DataTypes.DECIMAL,
-    payment_method: DataTypes.ENUM('credit_card', 'paypal', 'bank_transfer'), // RECONSIDERAR OPCIONES
-    payment_status: DataTypes.ENUM('pending', 'completed', 'failed', 'refunded'),
-    transaction_date: {type: "TIMESTAMP"}
-}, {sequelize, modelName: "Payments"})
+    payment_method: {
+        type: DataTypes.STRING, // Cambiado a STRING
+        allowNull: false,
+        validate: {
+            isIn: [['credit_card', 'paypal', 'bank_transfer']], // Validación de valores aceptados
+        },
+    },
+    payment_status: {
+        type: DataTypes.STRING, // Cambiado a STRING
+        allowNull: false,
+        validate: {
+            isIn: [['pending', 'completed', 'failed', 'refunded']], // Validación de valores aceptados
+        },
+    },
+    transaction_date: {
+        type: DataTypes.DATE, // Tipo DATE
+        allowNull: false,
+    },
+}, {
+    sequelize,
+    modelName: "Payment",
+});
+
+
+export {User, Auth, Payment, Commission};
