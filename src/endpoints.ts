@@ -1,15 +1,26 @@
 import { sequelize } from "./sync";
 import * as express from "express"
-import { getAllUsers, postRegister } from "./controllers";
+import { getAllUsers, Login, postRegister } from "./controllers";
 // APP
 const app = express();
 const PORT = 5000;
-sequelize.sync({force: true});
+// Force:true hace que no se guarden los datos en la databse, para eso se usa
+// alter: true
+sequelize.sync({alter: true});
 app.use(express.json());
 
 /* --------------- GET --------------- */
-app.get("/login", ()=>{
+app.post("/login", async (req, res)=>{
     // LOGIN -> Cada vez que loguee, actualizar el last_login
+    const {email, password} = req.body;
+    if (!req.body){
+        res.status(400).json("Falta body")
+    } else if (!email || !password){
+        res.status(400).json("Faltan datos en el body")
+    } else if (email && password){
+        let response = await Login({email, password});
+        res.json(response)
+    }
 });
 app.get("/getHomeFeed", ()=>{
     // LOGIN -> Cada vez que loguee, actualizar el last_login

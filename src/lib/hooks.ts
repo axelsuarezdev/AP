@@ -2,7 +2,7 @@ import * as crypto from "crypto";
 import * as jwt from "jsonwebtoken"
 import { Auth, User } from "../models";
 
-const SECRET = process.env.ULTRA_SECRET;
+export const SECRET = process.env.ULTRA_SECRET;
 
 export function getSHA256ofString(text:string){
     return crypto.createHash("sha256").update(JSON.stringify(text)).digest("hex");

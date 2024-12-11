@@ -1,10 +1,50 @@
-import { getSHA256ofString } from "../lib/hooks"
+import { getSHA256ofString, SECRET } from "../lib/hooks"
 import { User, Auth } from "../models"
 import { Transaction, Sequelize } from "sequelize-cockroachdb"
 import {v4 as uuidv4} from "uuid"
+import * as jwt from "jsonwebtoken";
 /* --------------- GET --------------- */
-export async function getLogin(accountData){
+export async function Login(accountData){
+    const sequelize = Auth.sequelize as Sequelize;
     console.log("Login controller called and recieved: ", accountData)
+    let {email, password} = accountData;
+    try{
+         return await sequelize.transaction(async (t: Transaction) => {
+            
+            // const authData = await Auth.findOne({where: {email, password}});
+            // if (!authData){
+            //     return "Email o contraseña incorrecta";
+            // }
+        //     else{
+                const todayDate = new Date();
+                const updatedData = await Auth.update({last_login: todayDate}, {where: {email, password}})
+                
+                return {updatedData}
+        //         authData.update({last_login: todayDate})
+        //     }
+
+        //     const [updatedRowsCount] = await Auth.update(
+        //     { last_login: todayDate }, // Valores que quieres actualizar
+        //     { where: { email, password } } // Condiciones del registro a actualizar
+        //     );
+
+        //     if (updatedRowsCount === 0) {
+            
+        //     }
+
+        //     // Generar el token después de la actualización
+        //     const userData = await User.findOne({ where: { email } });
+        //     const token = jwt.sign({ id: userData.get("id") }, SECRET);
+
+        //     return {
+        //     token,
+        //     name: userData?.get("name"),
+        //     location: userData?.get("location"),
+        //     };
+         });
+    } catch (error){
+        console.error("Error durante la transacción: ", error);
+    }
 }
 export async function getHomeFeed(){
     console.log("getHomeFeed controller called")
