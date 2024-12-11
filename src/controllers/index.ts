@@ -4,46 +4,66 @@ import { Transaction, Sequelize } from "sequelize-cockroachdb"
 import {v4 as uuidv4} from "uuid"
 import * as jwt from "jsonwebtoken";
 /* --------------- GET --------------- */
-export async function Login(accountData){
+export async function Login(accountData: { email: string; password: string }) {
     const sequelize = Auth.sequelize as Sequelize;
-    console.log("Login controller called and recieved: ", accountData)
-    let {email, password} = accountData;
-    try{
-         return await sequelize.transaction(async (t: Transaction) => {
-            
-            // const authData = await Auth.findOne({where: {email, password}});
-            // if (!authData){
-            //     return "Email o contraseña incorrecta";
-            // }
-        //     else{
-                const todayDate = new Date();
-                const updatedData = await Auth.update({last_login: todayDate}, {where: {email, password}})
-                
-                return {updatedData}
-        //         authData.update({last_login: todayDate})
-        //     }
+    console.log("Login controller called and received: ", accountData);
 
-        //     const [updatedRowsCount] = await Auth.update(
-        //     { last_login: todayDate }, // Valores que quieres actualizar
-        //     { where: { email, password } } // Condiciones del registro a actualizar
-        //     );
+    let { email, password } = accountData;
 
-        //     if (updatedRowsCount === 0) {
-            
-        //     }
+    try {
+        return await sequelize.transaction(async (t: Transaction) => {
+            // Hashear la contraseña recibida para compararla con la contraseña en la base de datos
+            const hashedPassword = getSHA256ofString(password);
 
-        //     // Generar el token después de la actualización
-        //     const userData = await User.findOne({ where: { email } });
-        //     const token = jwt.sign({ id: userData.get("id") }, SECRET);
+            // Verificar si existe el email y la contraseña hasheada en Auth
+            const authData = await Auth.findOne({
+                where: { email, password: hashedPassword },
+                transaction: t
+            });
 
-        //     return {
-        //     token,
-        //     name: userData?.get("name"),
-        //     location: userData?.get("location"),
-        //     };
-         });
-    } catch (error){
+            if (!authData) {
+                return { status: 'error', message: 'Email o contraseña incorrecta' };
+            }
+
+            // Actualizar el campo 'last_login' en Auth
+            const todayDate = new Date();
+            const [updatedRowsCount] = await Auth.update(
+                { last_login: todayDate },
+                { where: { email }, transaction: t }
+            );
+
+            if (updatedRowsCount === 0) {
+                return { status: 'error', message: 'Error al actualizar la fecha de última sesión' };
+            }
+
+            // Obtener los datos del usuario correspondiente usando el id de auth
+            const userData = await User.findOne({ where: { id: authData.get("id") }, transaction: t });
+
+            if (!userData) {
+                return { status: 'error', message: 'INCONSISTENCIA EN LA BASE DE DATOS: No se encontró usuario asociado al id' };
+            }
+
+            // Extraer solo los campos que quieres enviar del modelo User
+            const user = userData.get({ plain: true });
+
+            // Generar el token
+            const token = jwt.sign({ id: user.id }, SECRET);
+
+            return {
+                status: 'success',
+                token,
+                user: {
+                    name: user.name,
+                    username: user.username,
+                    profile_type: user.profile_type,
+                    description: user.description,
+                    profile_picture: user.profile_picture,
+                },
+            };
+        });
+    } catch (error) {
         console.error("Error durante la transacción: ", error);
+        return { status: 'error', message: 'Hubo un problema con el login' };
     }
 }
 export async function getHomeFeed(){
