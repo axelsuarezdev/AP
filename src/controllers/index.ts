@@ -70,7 +70,14 @@ export async function getHomeFeed(){
     console.log("getHomeFeed controller called")
 }
 export async function getArtistProfile(id){
-    console.log("getArtistProfile controlled called and recieved: ", id)
+    console.log("getArtistProfile controlled called and recieved: ", id);
+    try{
+        const aritstData = await User.findOne({where: {id,}})
+        return {aritstData}
+    } catch(e){
+        console.log("Error: ", e)
+    }
+    
 }
 export async function getComissionDetails(accountData){
     console.log("getComissionDetails controller called and recieved: ", accountData)
@@ -113,6 +120,7 @@ export async function postRegister(accountData) {
                     console.error("El email ya existe en la tabla Auth");
                     return { message: "El email ya existe en la tabla Auth", User: null, Auth: null };
                 }
+                let todayDate = new Date();
 
                 console.log("Creando nuevo usuario");
                 const newUser = await User.create(
@@ -121,6 +129,7 @@ export async function postRegister(accountData) {
                         name,
                         username,
                         profile_type: "client", // Asegúrate de rellenar este campo
+                        created_at: todayDate
                     },
                     { transaction: t }
                 );
@@ -128,7 +137,6 @@ export async function postRegister(accountData) {
                 console.log("Usuario creado: ", newUser.toJSON());
 
                 console.log("Creando Auth");
-                let todayDate = new Date();
                 const newAuth = await Auth.create(
                     {
                         id: newUser.get("id"),
@@ -164,9 +172,52 @@ export async function postArtwork(accountData){
 }
 
 /*  ---------------PUT --------------- */
-export async function putUpdateProfile(accountData){
-    console.log("updateProfoile controller called and recieved: ", accountData)
+export async function UpdateProfile(id, accountData: {
+    name?: string;
+    description?: string;
+    profile_picture?: string;
+}) {
+    console.log("updateProfile controller called and received: ", accountData);
+
+    const sequelize = Auth.sequelize as Sequelize;
+
+    try {
+        return await sequelize.transaction(async (t: Transaction) => {
+            // Verificar si el usuario existe
+            const userData = await User.findOne({
+                where: { id: id },
+                transaction: t,
+            });
+
+            if (!userData) {
+                return { status: "error", message: "Usuario no encontrado" };
+            }
+
+            // Actualizar directamente los campos recibidos
+            const updatedFields = {
+                ...accountData,
+                updated_at: new Date(), // Actualizar el campo 'updated_at'
+            };
+
+            await User.update(updatedFields, {
+                where: { id,},
+                transaction: t,
+            });
+
+            // Retornar los datos actualizado
+
+            return {
+                status: "success",
+                message: "Perfil actualizado correctamente",
+                updatedUser: updatedFields,
+            };
+        });
+    } catch (e) {
+        console.error("Error durante la transacción: ", e);
+        return { status: "error", message: "Hubo un problema con la actualización" };
+    }
 }
-export async function putUpdatePortfolio(accountData){
+
+export async function UpdatePortfolio(accountData){
     console.log("putUpdatePortfolio controller called and recieved: ", accountData)
 }
